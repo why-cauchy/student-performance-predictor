@@ -1,68 +1,74 @@
 import streamlit as st
+import pandas as pd
+import numpy as np
 import joblib
+from streamlit_option_menu import option_menu
+from streamlit_lottie import st_lottie
+import requests
 
-# Load ML model
+# ====================
+# Load Model
+# ====================
 model = joblib.load("student_model.pkl")
 
+# Load Lottie Animation
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+lottie_student = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_jcikwtux.json")
+
+# ====================
 # Sidebar Navigation
-st.sidebar.title("📌 Navigation")
-page = st.sidebar.radio("Go to:", ["🏠 Home", "📊 Predict", "ℹ️ About", "📞 Contact Us"])
+# ====================
+with st.sidebar:
+    selected = option_menu(
+        "📚 Student Predictor",
+        ["🏠 Home", "📊 Predict", "ℹ️ About", "📩 Contact"],
+        icons=["house", "bar-chart", "info-circle", "envelope"],
+        menu_icon="cast",
+        default_index=0
+    )
 
-# ---------------- Home Page ----------------
-if page == "🏠 Home":
+# ====================
+# Pages
+# ====================
+
+if selected == "🏠 Home":
     st.title("🎓 Student Performance Predictor")
-    st.write(
-        """
-        Welcome to the **Student Performance Predictor** web app!  
-        🚀 This tool uses Machine Learning to provide **educational insights** 
-        and help understand how students might perform.  
+    st.write("Welcome! This app helps predict student performance using Machine Learning.")
+    st_lottie(lottie_student, height=300)
+    st.info("Navigate using the sidebar to try predictions, learn about the project, or contact us.")
 
-        Use the sidebar to navigate:
-        - 📊 Predict student grades
-        - ℹ️ Learn more about the project
-        - 📞 Contact us
-        """
-    )
-    st.image("https://cdn-icons-png.flaticon.com/512/3135/3135755.png", width=180)
-
-# ---------------- Prediction Page ----------------
-elif page == "📊 Predict":
+elif selected == "📊 Predict":
     st.title("📊 Predict Student Performance")
-    st.write("Fill in the details below to get a grade prediction:")
+    st.write("Enter details below:")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        study_time = st.number_input("Study Time (hours)", 1, 10, 5)
-        absences = st.number_input("Absences", 0, 30, 2)
-    with col2:
-        g1 = st.number_input("Grade 1", 0, 20, 10)
-        g2 = st.number_input("Grade 2", 0, 20, 10)
+    # Input fields
+    hours = st.slider("Study Hours per Day", 0, 12, 4)
+    attendance = st.slider("Attendance %", 0, 100, 75)
+    assignments = st.slider("Assignments Completed (%)", 0, 100, 80)
 
-    if st.button("🔮 Predict Now"):
-        pred = model.predict([[study_time, absences, g1, g2]])
-        st.success(f"✅ Predicted Final Grade: **{pred[0]}**")
+    # Predict Button
+    if st.button("🔮 Predict"):
+        input_data = np.array([[hours, attendance, assignments]])
+        prediction = model.predict(input_data)[0]
+        st.success(f"✅ Predicted Performance: **{prediction}**")
 
-# ---------------- About Page ----------------
-elif page == "ℹ️ About":
-    st.title("ℹ️ About This Project")
-    st.write(
-        """
-        This web app is designed to predict **student performance** using 
-        Machine Learning models trained on educational datasets.  
+elif selected == "ℹ️ About":
+    st.title("ℹ️ About")
+    st.write("""
+    This web application uses a **Machine Learning model** 
+    to predict student performance based on study habits, 
+    attendance, and assignments.
+    
+    Built with ❤️ using Streamlit, Scikit-learn, and Python.
+    """)
 
-        **Tech Stack:**
-        - 🐍 Python
-        - 🤖 Scikit-Learn
-        - 📊 Streamlit  
-
-        Built with ❤️ to assist educators, institutions, and students.
-        """
-    )
-
-# ---------------- Contact Page ----------------
-elif page == "📞 Contact Us":
-    st.title("📞 Contact Us")
-    st.write("We’d love to hear from you! 💌")
-    st.write("📧 Email: support@edupredictor.com")
-    st.write("🌐 Website: www.edupredictor.com")
-    st.write("📍 Location: Burewala, Pakistan")
+elif selected == "📩 Contact":
+    st.title("📩 Contact Us")
+    st.write("Got questions? Reach out!")
+    st.write("📧 Email: support@yourapp.com")
+    st.write("🌐 Website: [yourwebsite.com](http://yourwebsite.com)")
